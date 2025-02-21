@@ -1,6 +1,7 @@
 package daysteps
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -10,25 +11,26 @@ import (
 )
 
 var (
-	StepLength = 0.65 // длина шага в метрах
+	StepLength  = 0.65 // длина шага в метрах
+	ErrProgramm = errors.New("ошибка в ходе выполнения программы")
 )
 
 func parsePackage(data string) (int, time.Duration, error) {
 	// ваш код ниже
 	slice := strings.Split(data, ",")
 	if len(slice) == 2 {
-		steps, err1 := strconv.Atoi(slice[0])
-		if err1 != nil {
-			return 0, 0, err1
-		}
-		duration, err2 := time.ParseDuration(slice[1])
-		if err2 != nil {
-			return 0, 0, err2
+		steps, err := strconv.Atoi(slice[0])
+		//if err1 != nil {
+		//	return 0, 0, err1
+		//}
+		duration, err := time.ParseDuration(slice[1])
+		if err != nil {
+			return 0, 0, err
 		}
 		return steps, duration, nil
-	} else {
-		return 0, 0, nil
 	}
+	return 0, 0, ErrProgramm
+
 }
 
 // DayActionInfo обрабатывает входящий пакет, который передаётся в
@@ -41,6 +43,7 @@ func DayActionInfo(data string, weight, height float64) string {
 	// ваш код ниже
 	steps, duration, err := parsePackage(data)
 	if err != nil {
+		fmt.Println(err)
 		return ""
 	}
 	if steps <= 0 {

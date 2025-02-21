@@ -1,7 +1,9 @@
 package spentcalories
 
 import (
+	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -16,22 +18,24 @@ const (
 	cmInM     = 100   // количество сантиметров в метре.
 )
 
+var ErrProgramm = errors.New("ошибка в ходе выполнения программы")
+
 func parseTraining(data string) (int, string, time.Duration, error) {
 	// ваш код ниже
 	slice := strings.Split(data, ",")
 	if len(slice) == 3 {
-		steps, err1 := strconv.Atoi(slice[0])
-		if err1 != nil {
-			return 0, "", 0, err1
+		steps, err := strconv.Atoi(slice[0])
+		if err != nil {
+			return 0, "", 0, err
 		}
 		nameTrain := slice[1]
-		duration, err2 := time.ParseDuration(slice[2])
-		if err2 != nil {
-			return 0, "", 0, err2
+		duration, err := time.ParseDuration(slice[2])
+		if err != nil {
+			return 0, "", 0, err
 		}
 		return steps, nameTrain, duration, nil
 	} else {
-		return 0, "", 0, nil
+		return 0, "", 0, ErrProgramm
 	}
 }
 
@@ -53,13 +57,10 @@ func distance(steps int) float64 {
 // duration time.Duration — длительность тренировки.
 func meanSpeed(steps int, duration time.Duration) float64 {
 	// ваш код ниже
-	if duration > 0 {
-		dist := distance(steps)
-		hours := duration.Hours()
-		return dist / hours
-	} else {
+	if duration <= 0 {
 		return 0
 	}
+	return distance(steps) / duration.Hours()
 }
 
 // ShowTrainingInfo возвращает строку с информацией о тренировке.
@@ -100,8 +101,7 @@ const (
 // duration time.Duration — длительность тренировки.
 func RunningSpentCalories(steps int, weight float64, duration time.Duration) float64 {
 	// ваш код здесь
-	meanSpeed := meanSpeed(steps, duration)
-	return ((runningCaloriesMeanSpeedMultiplier * meanSpeed) - runningCaloriesMeanSpeedShift) * weight
+	return ((runningCaloriesMeanSpeedMultiplier * meanSpeed(steps, duration)) - runningCaloriesMeanSpeedShift) * weight
 }
 
 // Константы для расчета калорий, расходуемых при ходьбе.
@@ -120,6 +120,6 @@ const (
 // height float64 — рост пользователя.
 func WalkingSpentCalories(steps int, weight, height float64, duration time.Duration) float64 {
 	// ваш код здесь
-	meanSpeed := meanSpeed(steps, duration)
-	return ((walkingCaloriesWeightMultiplier * weight) + (meanSpeed*meanSpeed/height)*walkingSpeedHeightMultiplier) * duration.Hours() * minInH
+
+	return ((walkingCaloriesWeightMultiplier * weight) + (math.Pow(meanSpeed(steps, duration), 2)*kmhInMsec/height)*walkingSpeedHeightMultiplier) * duration.Hours() * minInH
 }
